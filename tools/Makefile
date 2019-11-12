@@ -33,12 +33,12 @@ GCC_PREFIX = riscv64-unknown-elf
 
 # Define test name
 ifeq ($(strip $(ASM_TEST)),)
-	ASM_TEST = hello_world2
+	ASM_TEST = hello-mem
 endif
 
 # Define test name
 ifeq ($(strip $(ASM_TEST_DIR)),)
-	ASM_TEST_DIR = ${RV_ROOT}/testbench/asm
+	ASM_TEST_DIR = ${RV_ROOT}/testbench/hello-mem
 endif
 
 defines = ${RV_ROOT}/configs/snapshots/$(snapshot)/common_defines.vh ${RV_ROOT}/design/include/build.h ${RV_ROOT}/design/include/global.h ${RV_ROOT}/design/include/swerv_types.sv 
@@ -107,6 +107,7 @@ vcs-run: program.hex
 
 program.hex: $(ASM_TEST_DIR)/$(ASM_TEST).s ${RV_ROOT}/configs/snapshots/$(snapshot)/common_defines.vh
 	@echo Building $(ASM_TEST)
+
 ifeq ($(shell which $(GCC_PREFIX)-as),)
 	@echo " !!! No $(GCC_PREFIX)-as in path, using canned hex files !!"
 	cp ${RV_ROOT}/testbench/hex/*.hex .
@@ -121,7 +122,7 @@ else
 	$(GCC_PREFIX)-nm -f posix -C $(ASM_TEST).exe > $(ASM_TEST).tbl
 	@echo Completed building $(ASM_TEST)
 endif
-	
+
 help:
 	@echo Make sure the environment variable RV_ROOT is set.
 	@echo Possible targets: verilator vcs irun help clean all verilator-run irun-run vcs-run program.hex
