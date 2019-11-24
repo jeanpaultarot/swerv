@@ -1,0 +1,7 @@
+VERILOG_SOURCES = $(PWD)/../design/comparator.sv
+TOPLEVEL=comparator
+MODULE=comparator_test
+SIM=icarus
+include $(shell cocotb-config --makefiles)/Makefile.inc
+include $(shell cocotb-config --makefiles)/Makefile.sim
+
