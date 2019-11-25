@@ -13,11 +13,11 @@ module comparator
    logic [LENGTH-1:0] signal_to_delay_delayed_2;
    logic [LENGTH-1:0] signal_to_delay_delayed_3;
 
-   always_comb begin
+   always @* begin
       if (signal_to_delay_delayed_3 == signal_delayed)
-        equal = 1'b;
+        equal = 1;
       else
-        equal = 0'b;
+        equal = 0;
    end
    
    always @(posedge clk) begin
