@@ -53,12 +53,23 @@ loop:
    addi x4, x4, 1
    bnez x5, loop
 
+// beginning of new code
+    li x5, 2048
+    li x4, 5
+    li x3, 1024
+loop2:
+    sb x5, 0(x3)
+    addi x4, x4, -1
+    bnez x4, loop2
+// end of new code
+
 // Write 0xff to STDOUT for TB to termiate test.
 _finish:
     li x3, STDOUT
     addi x5, x0, 0xff
     sb x5, 0(x3)
     beq x0, x0, _finish
+
 .rept 100
     nop
 .endr
@@ -66,6 +77,6 @@ _finish:
 .data
 hw_data:
 .ascii "------------------------------------\n"
-.ascii "Hello World from SweRV EH1.3 @WDC !!\n"
+.ascii "Hello World 2 from SweRV EH1.4 @WDC !!\n"
 .ascii "------------------------------------"
 .byte 0
