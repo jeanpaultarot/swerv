@@ -618,246 +618,275 @@ module swerv_wrapper
    logic [31:0]           dmi_reg_rdata2;
    //------------------------------------------------------------
 
+   // Instantiate the comparators
 
+   logic                  cmp_rst;
+   logic                  addr_equal;
+   logic                  data_equal;
+
+   comparator data_comparator(
+                         .clk(clk),
+                         .rst(cmp_rst),
+                         .signal_to_delay(lsu_hwdata),
+                         .signal_delayed(lsu_hwdata2),
+                         .equal(data_equal)
+                              );
+   comparator addr_comparator(
+                         .clk(clk),
+                         .rst(cmp_rst),
+                         .signal_to_delay(lsu_haddr),
+                         .signal_delayed(lsu_haddr2),
+                         .equal(addr_equal)
+                              );
+
+   logic                  new_rst_l;// taking into account rst_l and the output of the comparators
+   assign new_rst_l = rst_l || (!addr_equal) || (!data_equal);
+
+   always @* begin
+      if ((!addr_equal) || (!data_equal)) $display("DUAL_LOCKSTEP_PROCESSOR found a difference in the result of both processors !!! RESETTING");
+   end
+   
    // Instantiate the swerv core
    swerv swerv (
-          .*
-          );
+                .rst_l(new_rst_l),
+                .*
+                );
    swerv swerv2 (
-.core_rst_l(core_rst_l2),   // This is "rst_l | dbg_rst_l"  
-.trace_rv_i_insn_ip(trace_rv_i_insn_ip2),
-.trace_rv_i_address_ip(trace_rv_i_address_ip2),
-.trace_rv_i_valid_ip(trace_rv_i_valid_ip2),
-.trace_rv_i_exception_ip(trace_rv_i_exception_ip2),
-.trace_rv_i_ecause_ip(trace_rv_i_ecause_ip2),
-.trace_rv_i_interrupt_ip(trace_rv_i_interrupt_ip2),
-.trace_rv_i_tval_ip(trace_rv_i_tval_ip2),                            
-.lsu_freeze_dc3(lsu_freeze_dc32),
-.dccm_clk_override(dccm_clk_override2),
-.icm_clk_override(icm_clk_override2),
-.dec_tlu_core_ecc_disable(dec_tlu_core_ecc_disable2),
-   // external halt/run interface
-.o_cpu_halt_ack(o_cpu_halt_ack2),    // Core Acknowledge to Halt request
-.o_cpu_halt_status(o_cpu_halt_status2), // 1'b1 indicates processor is halted
-.o_cpu_run_ack(o_cpu_run_ack2),     // Core Acknowledge to run request
-.o_debug_mode_status(o_debug_mode_status2), // Core to the PMU that core is in debug mode. When core is in debug mode2), the PMU should refrain from sendng a halt or run request
-   // external MPC halt/run interface
-.mpc_debug_halt_ack(mpc_debug_halt_ack2), // Halt ack
-.mpc_debug_run_ack(mpc_debug_run_ack2), // Run ack
-.debug_brkpt_status(debug_brkpt_status2), // debug breakpoint
-.dec_tlu_perfcnt0(dec_tlu_perfcnt02), // toggles when perf counter 0 has an event inc
-.dec_tlu_perfcnt1(dec_tlu_perfcnt12),
-.dec_tlu_perfcnt2(dec_tlu_perfcnt22),
-.dec_tlu_perfcnt3(dec_tlu_perfcnt32),
-   // DCCM ports                
-.dccm_wren(dccm_wren2),
-.dccm_rden(dccm_rden2),
-.dccm_wr_addr(dccm_wr_addr2),
-.dccm_rd_addr_lo(dccm_rd_addr_lo2),
-.dccm_rd_addr_hi(dccm_rd_addr_hi2),
-.dccm_wr_data(dccm_wr_data2),
+                 .rst_l(new_rst_l),
+                 .core_rst_l(core_rst_l2),   // This is "rst_l | dbg_rst_l"  
+                 .trace_rv_i_insn_ip(trace_rv_i_insn_ip2),
+                 .trace_rv_i_address_ip(trace_rv_i_address_ip2),
+                 .trace_rv_i_valid_ip(trace_rv_i_valid_ip2),
+                 .trace_rv_i_exception_ip(trace_rv_i_exception_ip2),
+                 .trace_rv_i_ecause_ip(trace_rv_i_ecause_ip2),
+                 .trace_rv_i_interrupt_ip(trace_rv_i_interrupt_ip2),
+                 .trace_rv_i_tval_ip(trace_rv_i_tval_ip2),                            
+                 .lsu_freeze_dc3(lsu_freeze_dc32),
+                 .dccm_clk_override(dccm_clk_override2),
+                 .icm_clk_override(icm_clk_override2),
+                 .dec_tlu_core_ecc_disable(dec_tlu_core_ecc_disable2),
+                 // external halt/run interface
+                 .o_cpu_halt_ack(o_cpu_halt_ack2),    // Core Acknowledge to Halt request
+                 .o_cpu_halt_status(o_cpu_halt_status2), // 1'b1 indicates processor is halted
+                 .o_cpu_run_ack(o_cpu_run_ack2),     // Core Acknowledge to run request
+                 .o_debug_mode_status(o_debug_mode_status2), // Core to the PMU that core is in debug mode. When core is in debug mode2), the PMU should refrain from sendng a halt or run request
+                 // external MPC halt/run interface
+                 .mpc_debug_halt_ack(mpc_debug_halt_ack2), // Halt ack
+                 .mpc_debug_run_ack(mpc_debug_run_ack2), // Run ack
+                 .debug_brkpt_status(debug_brkpt_status2), // debug breakpoint
+                 .dec_tlu_perfcnt0(dec_tlu_perfcnt02), // toggles when perf counter 0 has an event inc
+                 .dec_tlu_perfcnt1(dec_tlu_perfcnt12),
+                 .dec_tlu_perfcnt2(dec_tlu_perfcnt22),
+                 .dec_tlu_perfcnt3(dec_tlu_perfcnt32),
+                 // DCCM ports                
+                 .dccm_wren(dccm_wren2),
+                 .dccm_rden(dccm_rden2),
+                 .dccm_wr_addr(dccm_wr_addr2),
+                 .dccm_rd_addr_lo(dccm_rd_addr_lo2),
+                 .dccm_rd_addr_hi(dccm_rd_addr_hi2),
+                 .dccm_wr_data(dccm_wr_data2),
 `ifdef RV_ICCM_ENABLE
-   // ICCM ports
-.iccm_rw_addr(iccm_rw_addr2),
-.iccm_wren(iccm_wren2),
-.iccm_rden(iccm_rden2),
-.iccm_wr_size(iccm_wr_size2),
-.iccm_wr_data(iccm_wr_data2),
+                 // ICCM ports
+                 .iccm_rw_addr(iccm_rw_addr2),
+                 .iccm_wren(iccm_wren2),
+                 .iccm_rden(iccm_rden2),
+                 .iccm_wr_size(iccm_wr_size2),
+                 .iccm_wr_data(iccm_wr_data2),
 `endif
-   // ICache 2), ITAG  ports
-.ic_rw_addr(ic_rw_addr2),
-.ic_tag_valid(ic_tag_valid2),
-.ic_wr_en(ic_wr_en2),
-.ic_rd_en(ic_rd_en2),
+                 // ICache 2), ITAG  ports
+                 .ic_rw_addr(ic_rw_addr2),
+                 .ic_tag_valid(ic_tag_valid2),
+                 .ic_wr_en(ic_wr_en2),
+                 .ic_rd_en(ic_rd_en2),
 `ifdef RV_ICACHE_ECC
-.ic_wr_data(ic_wr_data2),         // Data to fill to the Icache. With ECC
-.ic_debug_wr_data(ic_debug_wr_data2),   // Debug wr cache. 
+                 .ic_wr_data(ic_wr_data2),         // Data to fill to the Icache. With ECC
+                 .ic_debug_wr_data(ic_debug_wr_data2),   // Debug wr cache. 
 `else 
-.ic_wr_data(ic_wr_data2),         // Data to fill to the Icache. With Parity
-.ic_debug_wr_data(ic_debug_wr_data2),   // Debug wr cache. 
+                 .ic_wr_data(ic_wr_data2),         // Data to fill to the Icache. With Parity
+                 .ic_debug_wr_data(ic_debug_wr_data2),   // Debug wr cache. 
 `endif
-.ic_premux_data(ic_premux_data2),     // Premux data to be muxed with each way of the Icache. 
-.ic_sel_premux_data(ic_sel_premux_data2), // Select premux data
-.ic_debug_addr(ic_debug_addr2),      // Read/Write addresss to the Icache.   
-.ic_debug_rd_en(ic_debug_rd_en2),     // Icache debug rd
-.ic_debug_wr_en(ic_debug_wr_en2),     // Icache debug wr
-.ic_debug_tag_array(ic_debug_tag_array2), // Debug tag array
-.ic_debug_way(ic_debug_way2),       // Debug way. Rd or Wr.
+                 .ic_premux_data(ic_premux_data2),     // Premux data to be muxed with each way of the Icache. 
+                 .ic_sel_premux_data(ic_sel_premux_data2), // Select premux data
+                 .ic_debug_addr(ic_debug_addr2),      // Read/Write addresss to the Icache.   
+                 .ic_debug_rd_en(ic_debug_rd_en2),     // Icache debug rd
+                 .ic_debug_wr_en(ic_debug_wr_en2),     // Icache debug wr
+                 .ic_debug_tag_array(ic_debug_tag_array2), // Debug tag array
+                 .ic_debug_way(ic_debug_way2),       // Debug way. Rd or Wr.
 `ifdef RV_BUILD_AXI4
-   //-------------------------- LSU AXI signals--------------------------
-   // AXI Write Channels
-.lsu_axi_awvalid(lsu_axi_awvalid2),
-.lsu_axi_awid(lsu_axi_awid2),
-.lsu_axi_awaddr(lsu_axi_awaddr2),
-.lsu_axi_awregion(lsu_axi_awregion2),
-.lsu_axi_awlen(lsu_axi_awlen2),
-.lsu_axi_awsize(lsu_axi_awsize2),
-.lsu_axi_awburst(lsu_axi_awburst2),
-.lsu_axi_awlock(lsu_axi_awlock2),
-.lsu_axi_awcache(lsu_axi_awcache2),
-.lsu_axi_awprot(lsu_axi_awprot2),
-.lsu_axi_awqos(lsu_axi_awqos2),
-.lsu_axi_wvalid(lsu_axi_wvalid2),                                       
-.lsu_axi_wdata(lsu_axi_wdata2),
-.lsu_axi_wstrb(lsu_axi_wstrb2),
-.lsu_axi_wlast(lsu_axi_wlast2),
-.lsu_axi_bready(lsu_axi_bready2),
-   // AXI Read Channels                    
-.lsu_axi_arvalid(lsu_axi_arvalid2),
-.lsu_axi_arid(lsu_axi_arid2),
-.lsu_axi_araddr(lsu_axi_araddr2),
-.lsu_axi_arregion(lsu_axi_arregion2),
-.lsu_axi_arlen(lsu_axi_arlen2),
-.lsu_axi_arsize(lsu_axi_arsize2),
-.lsu_axi_arburst(lsu_axi_arburst2),
-.lsu_axi_arlock(lsu_axi_arlock2),
-.lsu_axi_arcache(lsu_axi_arcache2),
-.lsu_axi_arprot(lsu_axi_arprot2),
-.lsu_axi_arqos(lsu_axi_arqos2),
-.lsu_axi_rready(lsu_axi_rready2),
-   //-------------------------- IFU AXI signals--------------------------
-   // AXI Write Channels
-.ifu_axi_awvalid(ifu_axi_awvalid2),
-.ifu_axi_awid(ifu_axi_awid2),
-.ifu_axi_awaddr(ifu_axi_awaddr2),
-.ifu_axi_awregion(ifu_axi_awregion2),
-.ifu_axi_awlen(ifu_axi_awlen2),
-.ifu_axi_awsize(ifu_axi_awsize2),
-.ifu_axi_awburst(ifu_axi_awburst2),
-.ifu_axi_awlock(ifu_axi_awlock2),
-.ifu_axi_awcache(ifu_axi_awcache2),
-.ifu_axi_awprot(ifu_axi_awprot2),
-.ifu_axi_awqos(ifu_axi_awqos2),
-.ifu_axi_wvalid(ifu_axi_wvalid2),                                       
-.ifu_axi_wdata(ifu_axi_wdata2),
-.ifu_axi_wstrb(ifu_axi_wstrb2),
-.ifu_axi_wlast(ifu_axi_wlast2),
-.ifu_axi_bready(ifu_axi_bready2),
-   // AXI Read Channels                    
-.ifu_axi_arvalid(ifu_axi_arvalid2),
-.ifu_axi_arid(ifu_axi_arid2),
-.ifu_axi_araddr(ifu_axi_araddr2),
-.ifu_axi_arregion(ifu_axi_arregion2),
-.ifu_axi_arlen(ifu_axi_arlen2),
-.ifu_axi_arsize(ifu_axi_arsize2),
-.ifu_axi_arburst(ifu_axi_arburst2),
-.ifu_axi_arlock(ifu_axi_arlock2),
-.ifu_axi_arcache(ifu_axi_arcache2),
-.ifu_axi_arprot(ifu_axi_arprot2),
-.ifu_axi_arqos(ifu_axi_arqos2),
-.ifu_axi_rready(ifu_axi_rready2),
-   //-------------------------- SB AXI signals--------------------------
-   // AXI Write Channels
-.sb_axi_awvalid(sb_axi_awvalid2),
-.sb_axi_awid(sb_axi_awid2),
-.sb_axi_awaddr(sb_axi_awaddr2),
-.sb_axi_awregion(sb_axi_awregion2),
-.sb_axi_awlen(sb_axi_awlen2),
-.sb_axi_awsize(sb_axi_awsize2),
-.sb_axi_awburst(sb_axi_awburst2),
-.sb_axi_awlock(sb_axi_awlock2),
-.sb_axi_awcache(sb_axi_awcache2),
-.sb_axi_awprot(sb_axi_awprot2),
-.sb_axi_awqos(sb_axi_awqos2),
-.sb_axi_wvalid(sb_axi_wvalid2),                                       
-.sb_axi_wdata(sb_axi_wdata2),
-.sb_axi_wstrb(sb_axi_wstrb2),
-.sb_axi_wlast(sb_axi_wlast2),
-.sb_axi_bready(sb_axi_bready2),
-   // AXI Read Channels                    
-.sb_axi_arvalid(sb_axi_arvalid2),
-.sb_axi_arid(sb_axi_arid2),
-.sb_axi_araddr(sb_axi_araddr2),
-.sb_axi_arregion(sb_axi_arregion2),
-.sb_axi_arlen(sb_axi_arlen2),
-.sb_axi_arsize(sb_axi_arsize2),
-.sb_axi_arburst(sb_axi_arburst2),
-.sb_axi_arlock(sb_axi_arlock2),
-.sb_axi_arcache(sb_axi_arcache2),
-.sb_axi_arprot(sb_axi_arprot2),
-.sb_axi_arqos(sb_axi_arqos2),
-.sb_axi_rready(sb_axi_rready2),
-   //-------------------------- DMA AXI signals--------------------------
-   // AXI Write Channels
-.dma_axi_awready(dma_axi_awready2),
-.dma_axi_wready(dma_axi_wready2),
-.dma_axi_bvalid(dma_axi_bvalid2),
-.dma_axi_bresp(dma_axi_bresp2),
-.dma_axi_bid(dma_axi_bid2),
-   // AXI Read Channels
-.dma_axi_arready(dma_axi_arready2),
-.dma_axi_rvalid(dma_axi_rvalid2),
-.dma_axi_rid(dma_axi_rid2),
-.dma_axi_rdata(dma_axi_rdata2),
-.dma_axi_rresp(dma_axi_rresp2),
-.dma_axi_rlast(dma_axi_rlast2),
+                 //-------------------------- LSU AXI signals--------------------------
+                 // AXI Write Channels
+                 .lsu_axi_awvalid(lsu_axi_awvalid2),
+                 .lsu_axi_awid(lsu_axi_awid2),
+                 .lsu_axi_awaddr(lsu_axi_awaddr2),
+                 .lsu_axi_awregion(lsu_axi_awregion2),
+                 .lsu_axi_awlen(lsu_axi_awlen2),
+                 .lsu_axi_awsize(lsu_axi_awsize2),
+                 .lsu_axi_awburst(lsu_axi_awburst2),
+                 .lsu_axi_awlock(lsu_axi_awlock2),
+                 .lsu_axi_awcache(lsu_axi_awcache2),
+                 .lsu_axi_awprot(lsu_axi_awprot2),
+                 .lsu_axi_awqos(lsu_axi_awqos2),
+                 .lsu_axi_wvalid(lsu_axi_wvalid2),                                       
+                 .lsu_axi_wdata(lsu_axi_wdata2),
+                 .lsu_axi_wstrb(lsu_axi_wstrb2),
+                 .lsu_axi_wlast(lsu_axi_wlast2),
+                 .lsu_axi_bready(lsu_axi_bready2),
+                 // AXI Read Channels                    
+                 .lsu_axi_arvalid(lsu_axi_arvalid2),
+                 .lsu_axi_arid(lsu_axi_arid2),
+                 .lsu_axi_araddr(lsu_axi_araddr2),
+                 .lsu_axi_arregion(lsu_axi_arregion2),
+                 .lsu_axi_arlen(lsu_axi_arlen2),
+                 .lsu_axi_arsize(lsu_axi_arsize2),
+                 .lsu_axi_arburst(lsu_axi_arburst2),
+                 .lsu_axi_arlock(lsu_axi_arlock2),
+                 .lsu_axi_arcache(lsu_axi_arcache2),
+                 .lsu_axi_arprot(lsu_axi_arprot2),
+                 .lsu_axi_arqos(lsu_axi_arqos2),
+                 .lsu_axi_rready(lsu_axi_rready2),
+                 //-------------------------- IFU AXI signals--------------------------
+                 // AXI Write Channels
+                 .ifu_axi_awvalid(ifu_axi_awvalid2),
+                 .ifu_axi_awid(ifu_axi_awid2),
+                 .ifu_axi_awaddr(ifu_axi_awaddr2),
+                 .ifu_axi_awregion(ifu_axi_awregion2),
+                 .ifu_axi_awlen(ifu_axi_awlen2),
+                 .ifu_axi_awsize(ifu_axi_awsize2),
+                 .ifu_axi_awburst(ifu_axi_awburst2),
+                 .ifu_axi_awlock(ifu_axi_awlock2),
+                 .ifu_axi_awcache(ifu_axi_awcache2),
+                 .ifu_axi_awprot(ifu_axi_awprot2),
+                 .ifu_axi_awqos(ifu_axi_awqos2),
+                 .ifu_axi_wvalid(ifu_axi_wvalid2),                                       
+                 .ifu_axi_wdata(ifu_axi_wdata2),
+                 .ifu_axi_wstrb(ifu_axi_wstrb2),
+                 .ifu_axi_wlast(ifu_axi_wlast2),
+                 .ifu_axi_bready(ifu_axi_bready2),
+                 // AXI Read Channels                    
+                 .ifu_axi_arvalid(ifu_axi_arvalid2),
+                 .ifu_axi_arid(ifu_axi_arid2),
+                 .ifu_axi_araddr(ifu_axi_araddr2),
+                 .ifu_axi_arregion(ifu_axi_arregion2),
+                 .ifu_axi_arlen(ifu_axi_arlen2),
+                 .ifu_axi_arsize(ifu_axi_arsize2),
+                 .ifu_axi_arburst(ifu_axi_arburst2),
+                 .ifu_axi_arlock(ifu_axi_arlock2),
+                 .ifu_axi_arcache(ifu_axi_arcache2),
+                 .ifu_axi_arprot(ifu_axi_arprot2),
+                 .ifu_axi_arqos(ifu_axi_arqos2),
+                 .ifu_axi_rready(ifu_axi_rready2),
+                 //-------------------------- SB AXI signals--------------------------
+                 // AXI Write Channels
+                 .sb_axi_awvalid(sb_axi_awvalid2),
+                 .sb_axi_awid(sb_axi_awid2),
+                 .sb_axi_awaddr(sb_axi_awaddr2),
+                 .sb_axi_awregion(sb_axi_awregion2),
+                 .sb_axi_awlen(sb_axi_awlen2),
+                 .sb_axi_awsize(sb_axi_awsize2),
+                 .sb_axi_awburst(sb_axi_awburst2),
+                 .sb_axi_awlock(sb_axi_awlock2),
+                 .sb_axi_awcache(sb_axi_awcache2),
+                 .sb_axi_awprot(sb_axi_awprot2),
+                 .sb_axi_awqos(sb_axi_awqos2),
+                 .sb_axi_wvalid(sb_axi_wvalid2),                                       
+                 .sb_axi_wdata(sb_axi_wdata2),
+                 .sb_axi_wstrb(sb_axi_wstrb2),
+                 .sb_axi_wlast(sb_axi_wlast2),
+                 .sb_axi_bready(sb_axi_bready2),
+                 // AXI Read Channels                    
+                 .sb_axi_arvalid(sb_axi_arvalid2),
+                 .sb_axi_arid(sb_axi_arid2),
+                 .sb_axi_araddr(sb_axi_araddr2),
+                 .sb_axi_arregion(sb_axi_arregion2),
+                 .sb_axi_arlen(sb_axi_arlen2),
+                 .sb_axi_arsize(sb_axi_arsize2),
+                 .sb_axi_arburst(sb_axi_arburst2),
+                 .sb_axi_arlock(sb_axi_arlock2),
+                 .sb_axi_arcache(sb_axi_arcache2),
+                 .sb_axi_arprot(sb_axi_arprot2),
+                 .sb_axi_arqos(sb_axi_arqos2),
+                 .sb_axi_rready(sb_axi_rready2),
+                 //-------------------------- DMA AXI signals--------------------------
+                 // AXI Write Channels
+                 .dma_axi_awready(dma_axi_awready2),
+                 .dma_axi_wready(dma_axi_wready2),
+                 .dma_axi_bvalid(dma_axi_bvalid2),
+                 .dma_axi_bresp(dma_axi_bresp2),
+                 .dma_axi_bid(dma_axi_bid2),
+                 // AXI Read Channels
+                 .dma_axi_arready(dma_axi_arready2),
+                 .dma_axi_rvalid(dma_axi_rvalid2),
+                 .dma_axi_rid(dma_axi_rid2),
+                 .dma_axi_rdata(dma_axi_rdata2),
+                 .dma_axi_rresp(dma_axi_rresp2),
+                 .dma_axi_rlast(dma_axi_rlast2),
 `endif
 `ifdef RV_BUILD_AHB_LITE
- //// AHB LITE BUS
-.haddr(haddr2),
-.hburst(hburst2),
-.hmastlock(hmastlock2),
-.hprot(hprot2),
-.hsize(hsize2),
-.htrans(htrans2),
-.hwrite(hwrite2),
-   // LSU AHB Master
-.lsu_haddr(lsu_haddr2),
-.lsu_hburst(lsu_hburst2),
-.lsu_hmastlock(lsu_hmastlock2),
-.lsu_hprot(lsu_hprot2),
-.lsu_hsize(lsu_hsize2),
-.lsu_htrans(lsu_htrans2),
-.lsu_hwrite(lsu_hwrite2),
-.lsu_hwdata(lsu_hwdata2),
-   //System Bus Debug Master                        
-.sb_haddr(sb_haddr2),
-.sb_hburst(sb_hburst2),
-.sb_hmastlock(sb_hmastlock2),
-.sb_hprot(sb_hprot2),
-.sb_hsize(sb_hsize2),
-.sb_htrans(sb_htrans2),
-.sb_hwrite(sb_hwrite2),
-.sb_hwdata(sb_hwdata2),
-   // DMA Slave   
-.dma_hrdata(dma_hrdata2),
-.dma_hreadyout(dma_hreadyout2),
-.dma_hresp(dma_hresp2),
+                 //// AHB LITE BUS
+                 .haddr(haddr2),
+                 .hburst(hburst2),
+                 .hmastlock(hmastlock2),
+                 .hprot(hprot2),
+                 .hsize(hsize2),
+                 .htrans(htrans2),
+                 .hwrite(hwrite2),
+                 // LSU AHB Master
+                 .lsu_haddr(lsu_haddr2),
+                 .lsu_hburst(lsu_hburst2),
+                 .lsu_hmastlock(lsu_hmastlock2),
+                 .lsu_hprot(lsu_hprot2),
+                 .lsu_hsize(lsu_hsize2),
+                 .lsu_htrans(lsu_htrans2),
+                 .lsu_hwrite(lsu_hwrite2),
+                 .lsu_hwdata(lsu_hwdata2),
+                 //System Bus Debug Master                        
+                 .sb_haddr(sb_haddr2),
+                 .sb_hburst(sb_hburst2),
+                 .sb_hmastlock(sb_hmastlock2),
+                 .sb_hprot(sb_hprot2),
+                 .sb_hsize(sb_hsize2),
+                 .sb_htrans(sb_htrans2),
+                 .sb_hwrite(sb_hwrite2),
+                 .sb_hwdata(sb_hwdata2),
+                 // DMA Slave   
+                 .dma_hrdata(dma_hrdata2),
+                 .dma_hreadyout(dma_hreadyout2),
+                 .dma_hresp(dma_hresp2),
 `endif //  `ifdef RV_BUILD_AHB_LITE
-   //Debug module
-.dmi_reg_rdata(dmi_reg_rdata2),
-          .*
-          );
+                 //Debug module
+                 .dmi_reg_rdata(dmi_reg_rdata2),
+                 .*
+                 );
    
    // Instantiate the mem
    mem  mem (
-        .rst_l(core_rst_l),
-        .*
-        );
+             .rst_l(core_rst_l),
+             .*
+             );
    
-  // Instantiate the JTAG/DMI
+   // Instantiate the JTAG/DMI
    dmi_wrapper  dmi_wrapper (
-           .scan_mode(scan_mode),           // scan mode
+                             .scan_mode(scan_mode),           // scan mode
 
-           // JTAG signals
-           .trst_n(jtag_trst_n),           // JTAG reset
-           .tck   (jtag_tck),              // JTAG clock
-           .tms   (jtag_tms),              // Test mode select
-           .tdi   (jtag_tdi),              // Test Data Input
-           .tdo   (jtag_tdo),              // Test Data Output
-           .tdoEnable (),                  // Test Data Output enable
+                             // JTAG signals
+                             .trst_n(jtag_trst_n),           // JTAG reset
+                             .tck   (jtag_tck),              // JTAG clock
+                             .tms   (jtag_tms),              // Test mode select
+                             .tdi   (jtag_tdi),              // Test Data Input
+                             .tdo   (jtag_tdo),              // Test Data Output
+                             .tdoEnable (),                  // Test Data Output enable
 
-           // Processor Signals
-           .core_rst_n  (core_rst_l),     // Core reset, active low
-           .core_clk    (clk),            // Core clock
-           .jtag_id     (jtag_id),        // 32 bit JTAG ID
-           .rd_data     (dmi_reg_rdata),  // 32 bit Read data from  Processor
-           .reg_wr_data (dmi_reg_wdata),  // 32 bit Write data to Processor
-           .reg_wr_addr (dmi_reg_addr),   // 32 bit Write address to Processor
-           .reg_en      (dmi_reg_en),     // 1 bit  Write interface bit to Processor
-           .reg_wr_en   (dmi_reg_wr_en),   // 1 bit  Write enable to Processor
-           .dmi_hard_reset   (dmi_hard_reset)   //a hard reset of the DTM, causing the DTM to forget about any outstanding DMI transactions
-);
+                             // Processor Signals
+                             .core_rst_n  (core_rst_l),     // Core reset, active low
+                             .core_clk    (clk),            // Core clock
+                             .jtag_id     (jtag_id),        // 32 bit JTAG ID
+                             .rd_data     (dmi_reg_rdata),  // 32 bit Read data from  Processor
+                             .reg_wr_data (dmi_reg_wdata),  // 32 bit Write data to Processor
+                             .reg_wr_addr (dmi_reg_addr),   // 32 bit Write address to Processor
+                             .reg_en      (dmi_reg_en),     // 1 bit  Write interface bit to Processor
+                             .reg_wr_en   (dmi_reg_wr_en),   // 1 bit  Write enable to Processor
+                             .dmi_hard_reset   (dmi_hard_reset)   //a hard reset of the DTM, causing the DTM to forget about any outstanding DMI transactions
+                             );
 
 endmodule
-   
+

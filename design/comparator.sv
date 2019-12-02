@@ -1,4 +1,5 @@
 module comparator
+  # (parameter LENGTH = 64)
   (
    input logic              clk,
    input logic              rst,
@@ -7,8 +8,6 @@ module comparator
    output logic             equal
    );
 
-   parameter LENGTH = 32;
-   
    logic [LENGTH-1:0] signal_to_delay_delayed_1;
    logic [LENGTH-1:0] signal_to_delay_delayed_2;
    logic [LENGTH-1:0] signal_to_delay_delayed_3;
