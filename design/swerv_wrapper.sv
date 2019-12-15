@@ -21,6 +21,7 @@
 //
 //********************************************************************************
 `include "build.h"
+`include "../comparator.sv"
 //`include "def.sv"
 module swerv_wrapper  
    import swerv_types::*;
@@ -623,25 +624,47 @@ module swerv_wrapper
    logic                  cmp_rst;
    logic                  addr_equal;
    logic                  data_equal;
+   assign cmp_rst = rst_l;
+   logic [63:0]           lsu_hwdata_immediate;
+   logic [31:0]           lsu_haddr_immediate;
+   always_comb begin
+      if (new_rst_l || new_rst_l_delayed_1 || new_rst_l_delayed_2 || new_rst_l_delayed_3) begin
+         lsu_hwdata_immediate = 0;
+         lsu_haddr_immediate = 0;
+      end
+      else begin
+         lsu_hwdata_immediate = lsu_hwdata2;
+         lsu_haddr_immediate = lsu_haddr2;
+      end
+   end
 
-   comparator data_comparator(
+   comparator #(.LENGTH(64)) data_comparator(
                          .clk(clk),
                          .rst(cmp_rst),
                          .signal_to_delay(lsu_hwdata),
-                         .signal_delayed(lsu_hwdata2),
+                         .signal_delayed(lsu_hwdata_immediate),
                          .equal(data_equal)
                               );
-   comparator addr_comparator(
+   comparator #(.LENGTH(32)) addr_comparator(
                          .clk(clk),
                          .rst(cmp_rst),
                          .signal_to_delay(lsu_haddr),
-                         .signal_delayed(lsu_haddr2),
+                         .signal_delayed(lsu_haddr_immediate),
                          .equal(addr_equal)
                               );
 
    logic                  new_rst_l;// taking into account rst_l and the output of the comparators
    assign new_rst_l = rst_l || (!addr_equal) || (!data_equal);
 
+   logic                  new_rst_l_delayed_1;
+   logic                  new_rst_l_delayed_2;
+   logic                  new_rst_l_delayed_3;
+   always @(posedge clk) begin
+      new_rst_l_delayed_3 <= new_rst_l_delayed_2;
+      new_rst_l_delayed_2 <= new_rst_l_delayed_1;
+      new_rst_l_delayed_1 <= new_rst_l;
+  end
+   
    always @* begin
       if ((!addr_equal) || (!data_equal)) $display("DUAL_LOCKSTEP_PROCESSOR found a difference in the result of both processors !!! RESETTING");
    end
@@ -652,7 +675,7 @@ module swerv_wrapper
                 .*
                 );
    swerv swerv2 (
-                 .rst_l(new_rst_l),
+                 .rst_l(new_rst_l_delayed_3),
                  .core_rst_l(core_rst_l2),   // This is "rst_l | dbg_rst_l"  
                  .trace_rv_i_insn_ip(trace_rv_i_insn_ip2),
                  .trace_rv_i_address_ip(trace_rv_i_address_ip2),

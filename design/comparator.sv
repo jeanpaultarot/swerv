@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+// for testing with cocotb : `timescale 1ns/1ps
 
 module comparator
   # (parameter LENGTH = 8)
