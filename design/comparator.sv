@@ -1,5 +1,7 @@
+`timescale 1ns/1ps
+
 module comparator
-  # (parameter LENGTH = 64)
+  # (parameter LENGTH = 8)
   (
    input logic              clk,
    input logic              rst,

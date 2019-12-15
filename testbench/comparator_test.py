@@ -4,8 +4,8 @@ from cocotb.clock import Clock
 from cocotb_coverage import crv
 from cocotb_coverage.coverage import *
 
-NUM_EXECUTIONS = 10
-SIGNAL_LENGTH = 32
+NUM_EXECUTIONS = 100
+SIGNAL_LENGTH = 8
 NUMBER_OF_RESETS = 5
 
 # Generates random values for signal_delayed and signal_to_delay
@@ -61,19 +61,21 @@ class TestBench:
         ref_signal_to_delay_delayed_3 = 0
         for _ in range(self.num_executions):
             yield self.in_vals.wait()
+            self.ref_equal = (ref_signal_to_delay_delayed_3 == self.in_vals.data[1])
             ref_signal_to_delay_delayed_3 = ref_signal_to_delay_delayed_2
             ref_signal_to_delay_delayed_2 = ref_signal_to_delay_delayed_1
             ref_signal_to_delay_delayed_1 = self.in_vals.data[0]
-            self.ref_equal = (ref_signal_to_delay_delayed_3 == self.in_vals.data[1])
             self.out_vals.set(self.ref_equal)
             self.in_vals.clear()          
 
     @cocotb.coroutine
     def Checker(self, ref_th):
+        last_ref_equal = False
         for _ in range(self.num_executions):
             yield self.out_vals.wait()
-            cocotb.log.info(" ref_equal={0}, dut_equal={1}".format(self.ref_equal, int(self.dut.equal.value)))
-            assert self.dut.equal == self.ref_equal
+            cocotb.log.info(" ref_equal={0}, dut_equal={1}".format(last_ref_equal, int(self.dut.equal.value)))
+            assert self.dut.equal == last_ref_equal
+            last_ref_equal = self.out_vals.data
             self.out_vals.clear()
 
     @cocotb.coroutine
@@ -88,7 +90,7 @@ def comparator_test(dut):
     cocotb.fork(Clock(dut.clk, 10, "ns").start())
     cocotb.log.info("Running {0} tests".format(NUM_EXECUTIONS * NUMBER_OF_RESETS))
     for i in range(NUMBER_OF_RESETS):
-        cocotb.log.info("Test {0} : Running {1} tests".format(NUMBER_OF_RESETS, NUM_EXECUTIONS))
+        cocotb.log.info("Test {0} : Running {1} tests".format(i, NUM_EXECUTIONS))
         tb = TestBench(dut, NUM_EXECUTIONS)
         yield tb.run()
     coverage_db.report_coverage(cocotb.logging.getLogger("cocotb.test").info, bins=True)
