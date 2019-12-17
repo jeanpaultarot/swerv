@@ -33,12 +33,12 @@ GCC_PREFIX = riscv64-unknown-elf
 
 # Define test name
 ifeq ($(strip $(ASM_TEST)),)
-	ASM_TEST = hello-mem
+	ASM_TEST = hello_world2
 endif
 
 # Define test name
 ifeq ($(strip $(ASM_TEST_DIR)),)
-	ASM_TEST_DIR = ${RV_ROOT}/testbench/hello-mem
+	ASM_TEST_DIR = ${RV_ROOT}/testbench/asm
 endif
 
 defines = ${RV_ROOT}/configs/snapshots/$(snapshot)/common_defines.vh ${RV_ROOT}/design/include/build.h ${RV_ROOT}/design/include/global.h ${RV_ROOT}/design/include/swerv_types.sv 
