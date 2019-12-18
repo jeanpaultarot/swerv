@@ -624,20 +624,46 @@ module swerv_wrapper
    logic                  cmp_rst;
    logic                  addr_equal;
    logic                  data_equal;
-   assign cmp_rst = new_rst_l;
+   assign cmp_rst = !new_rst_l;
 
+   logic [63:0]           lsu_hwdata_gated;
+   logic [31:0]           lsu_haddr_gated;
+   logic [63:0]           lsu_hwdata2_gated;
+   logic [31:0]           lsu_haddr2_gated;
+   always_comb begin
+      if (lsu_hwrite) begin
+         lsu_hwdata_gated = lsu_hwdata;
+         lsu_haddr_gated = lsu_haddr;
+      end
+      else begin
+         lsu_hwdata_gated = 0;
+         lsu_haddr_gated = 0;
+      end
+   end
+
+   always_comb begin
+      if (lsu_hwrite2) begin
+         lsu_hwdata2_gated = lsu_hwdata2;
+         lsu_haddr2_gated = lsu_haddr2;
+      end
+      else begin
+         lsu_hwdata2_gated = 0;
+         lsu_haddr2_gated = 0;
+      end
+   end
+   
    comparator #(.LENGTH(64)) data_comparator(
                          .clk(clk),
                          .rst(cmp_rst),
-                         .signal_to_delay(lsu_hwdata),
-                         .signal_delayed(lsu_hwdata2),
+                         .signal_to_delay(lsu_hwdata_gated),
+                         .signal_delayed(lsu_hwdata2_gated),
                          .equal(data_equal)
                               );
    comparator #(.LENGTH(32)) addr_comparator(
                          .clk(clk),
                          .rst(cmp_rst),
-                         .signal_to_delay(lsu_haddr),
-                         .signal_delayed(lsu_haddr2),
+                         .signal_to_delay(lsu_haddr_gated),
+                         .signal_delayed(lsu_haddr2_gated),
                          .equal(addr_equal)
                               );
 
@@ -647,13 +673,13 @@ module swerv_wrapper
    logic                  new_rst_l_delayed_2;
    logic                  new_rst_l_delayed_3;
    logic                  recent_reset;
-   assign recent_reset = new_rst_l || new_rst_l_delayed_1 || new_rst_l_delayed_2;
+   assign recent_reset = !new_rst_l || !new_rst_l_delayed_1 || !new_rst_l_delayed_2;
                  
    always @(posedge clk) begin
       new_rst_l_delayed_3 <= new_rst_l_delayed_2;
       new_rst_l_delayed_2 <= new_rst_l_delayed_1;
       new_rst_l_delayed_1 <= new_rst_l;
-      new_rst_l <= rst_l || (!addr_equal && !recent_reset) || (!data_equal && !recent_reset);
+      new_rst_l <= !(!rst_l || (!addr_equal && !recent_reset) || (!data_equal && !recent_reset));
    end
 
    // Logging for debugging purposes
