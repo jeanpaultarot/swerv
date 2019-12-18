@@ -628,7 +628,7 @@ module swerv_wrapper
    logic [63:0]           lsu_hwdata_immediate;
    logic [31:0]           lsu_haddr_immediate;
    always_comb begin
-      if (new_rst_l || new_rst_l_delayed_1 || new_rst_l_delayed_2 || new_rst_l_delayed_3) begin
+      if (rst_l || new_rst_l_delayed_1 || new_rst_l_delayed_2 || new_rst_l_delayed_3) begin
          lsu_hwdata_immediate = 0;
          lsu_haddr_immediate = 0;
       end
