@@ -591,6 +591,7 @@ module swerv_wrapper
    logic [2:0]            hsize2;
    logic [1:0]            htrans2;
    logic                  hwrite2;
+   logic [63:0]           cycleCnt;
    // LSU AHB Master
    logic [31:0]          lsu_haddr2;
    logic [2:0]           lsu_hburst2;
@@ -626,6 +627,23 @@ module swerv_wrapper
    logic                  addr_equal;
    assign cmp_rst = !new_rst_l;
 
+   // testing
+ /*  initial begin
+      cycleCnt = 0;
+   end
+   
+   always @(posedge clk) begin
+      cycleCnt <= cycleCnt+1;
+   end
+
+   always @(posedge clk) begin
+      if(cycleCnt == 64'd100) begin
+            $display ("Hit cycle 100, inserting wrong value");
+            lsu_hwdata2 = 64'd666;
+        end
+   end
+  */ 
+  
    comparator #(.LENGTH(64)) data_comparator(
                                              .clk(clk),
                                              .rst(cmp_rst),
@@ -644,7 +662,7 @@ module swerv_wrapper
                                              .signal2_enable(lsu_hwrite2),
                                              .equal(addr_equal)
                                              );
-
+   
    // Resetting the extra core 3 cycles later
    
    logic                  new_rst_l;// taking into account rst_l and the output of the comparators
